@@ -77,7 +77,7 @@ withOnCompile:(RCTResponseSenderBlock)onCompile
   _shaders[id] = shader;
 }
 
-static NSString* fullViewportVert = @"attribute vec2 _p;varying vec2 uv;void main(){gl_Position = vec4(_p,0.,1.);uv=vec2(.5,.5)*(_p+vec2(1.,1.));}";
+static NSString* fullViewportVert = @"uniform mat4 world; attribute vec2 _p;varying vec2 uv;void main(){gl_Position = vec4(_p,0.,1.) * world;uv=vec2(.5,.5)*(_p+vec2(1.,1.));}";
 
 NSString* glTypeString (int type) {
   switch (type) {

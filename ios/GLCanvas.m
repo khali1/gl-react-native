@@ -45,6 +45,7 @@ NSArray* diff (NSArray* a, NSArray* b) {
 
   NSArray *_rasterizedContent;
   NSArray *_contentTextures;
+  NSMutableArray *_contentTextureTransforms;
   NSDictionary *_images; // This caches the currently used images (imageSrc -> GLReactImage)
 
   BOOL _opaque; // opaque prop (if false, the GLCanvas will become transparent)
@@ -90,6 +91,7 @@ RCT_NOT_IMPLEMENTED(-init)
   _captureConfigs = nil;
   _rasterizedContent = nil;
   _contentTextures = nil;
+  _contentTextureTransforms = nil;
   _data = nil;
   _renderData = nil;
   if (animationTimer) {
@@ -278,6 +280,16 @@ RCT_NOT_IMPLEMENTED(-init)
             }
           }
         }
+        /*else if ([uniformName isEqualToString:@"world"]) {
+          SEL selector = NSSelectorFromString(@"getPixelBuffer");
+          if ([v respondsToSelector:selector]) {
+            NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:
+                                      [[v class] instanceMethodSignatureForSelector:selector]];
+            [invocation setSelector:selector];
+            [invocation setTarget:v];
+            [invocation invoke];
+          }
+        }*/
         else {
           uniforms[uniformName] = value;
         }
@@ -374,6 +386,18 @@ RCT_NOT_IMPLEMENTED(-init)
       }
       else {
         [_contentTextures[i] setPixels:_rasterizedContent[i]];
+      }
+
+      selector = NSSelectorFromString(@"getPreferredTransform");
+      if ([v respondsToSelector:selector]) {
+        NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:
+                                    [[v class] instanceMethodSignatureForSelector:selector]];
+        [invocation setSelector:selector];
+        [invocation setTarget:v];
+        [invocation invoke];
+        CGAffineTransform transform;
+        [invocation getReturnValue:&transform];
+        _contentTextureTransforms[i] = [NSValue valueWithCGAffineTransform:transform];
       }
     }
   }
@@ -548,6 +572,19 @@ RCT_NOT_IMPLEMENTED(-init)
       for (NSString *uniformName in renderData.uniforms) {
         [renderData.shader setUniform:uniformName withValue:renderData.uniforms[uniformName]];
       }
+
+      for (NSString *uniformName in renderData.textures) {
+        NSUInteger index = [_contentTextures indexOfObject:renderData.textures[uniformName]];
+        if (index != NSNotFound) {
+          CGAffineTransform transform = [_contentTextureTransforms[index] CGAffineTransformValue];
+          [renderData.shader setUniform:@"world" withValue:
+           @[@(transform.a), @(-transform.b), @0, @0,
+             @(transform.c), @(-transform.d), @0, @0,
+             @0, @0, @1, @0,
+             @0, @0, @0, @1
+             ]];
+        }
+      }
       RCT_PROFILE_END_EVENT(0, @"gl", nil);
 
       RCT_PROFILE_BEGIN_EVENT(0, @"draw", nil);
@@ -609,13 +646,18 @@ RCT_NOT_IMPLEMENTED(-init)
   if (length == n) return;
   if (n < length) {
     _contentTextures = [_contentTextures subarrayWithRange:NSMakeRange(0, n)];
+    _contentTextureTransforms = [_contentTextureTransforms subarrayWithRange:NSMakeRange(0, n)];
   }
   else {
     NSMutableArray *contentTextures = [[NSMutableArray alloc] initWithArray:_contentTextures];
+    NSMutableArray *contentTextureTransforms = [[NSMutableArray alloc] initWithArray:_contentTextureTransforms];
+    NSValue *defaultTransform = [NSValue valueWithCGAffineTransform:CGAffineTransformIdentity];
     for (int i = (int) [_contentTextures count]; i < n; i++) {
       [contentTextures addObject:[[GLTexture alloc] init]];
+      [contentTextureTransforms addObject:defaultTransform];
     }
     _contentTextures = contentTextures;
+    _contentTextureTransforms = contentTextureTransforms;
   }
 }
 
