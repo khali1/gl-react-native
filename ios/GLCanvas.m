@@ -578,8 +578,8 @@ RCT_NOT_IMPLEMENTED(-init)
         if (index != NSNotFound) {
           CGAffineTransform transform = [_contentTextureTransforms[index] CGAffineTransformValue];
           [renderData.shader setUniform:@"world" withValue:
-           @[@(transform.a), @(-transform.b), @0, @0,
-             @(transform.c), @(-transform.d), @0, @0,
+           @[@(transform.a), @(transform.b), @0, @0,
+             @(transform.c), @(transform.d), @0, @0,
              @0, @0, @1, @0,
              @0, @0, @0, @1
              ]];
