@@ -274,16 +274,6 @@ RCT_NOT_IMPLEMENTED(-init)
             }
           }
         }
-        /*else if ([uniformName isEqualToString:@"world"]) {
-          SEL selector = NSSelectorFromString(@"getPixelBuffer");
-          if ([v respondsToSelector:selector]) {
-            NSInvocation *invocation = [NSInvocation invocationWithMethodSignature:
-                                      [[v class] instanceMethodSignatureForSelector:selector]];
-            [invocation setSelector:selector];
-            [invocation setTarget:v];
-            [invocation invoke];
-          }
-        }*/
         else {
           uniforms[uniformName] = value;
         }
@@ -567,18 +557,6 @@ RCT_NOT_IMPLEMENTED(-init)
         [renderData.shader setUniform:uniformName withValue:renderData.uniforms[uniformName]];
       }
 
-      for (NSString *uniformName in renderData.textures) {
-        NSUInteger index = [_contentTextures indexOfObject:renderData.textures[uniformName]];
-        if (index != NSNotFound) {
-          CGAffineTransform transform = [_contentTextureTransforms[index] CGAffineTransformValue];
-          [renderData.shader setUniform:@"world" withValue:
-           @[@(transform.a), @(transform.b), @0, @0,
-             @(transform.c), @(transform.d), @0, @0,
-             @0, @0, @1, @0,
-             @0, @0, @0, @1
-             ]];
-        }
-      }
       RCT_PROFILE_END_EVENT(0, @"gl", nil);
 
       RCT_PROFILE_BEGIN_EVENT(0, @"draw", nil);
